@@ -11,7 +11,7 @@ const { body, validationResult } = require("express-validator");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 var schema = mongoose.Schema;
-const uri = "mongodb://localhost:27017/libraryData";
+const uri = "mongodb+srv://admin-ashwin:"+ process.env.dbpass +"@cluster0.kiishes.mongodb.net/libraryData";
 const pageOffset = 10;
 
 

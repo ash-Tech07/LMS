@@ -603,21 +603,12 @@ function getAllDetails(type, page) {
 
 // Sending the loginpage on get request  
 app.get("/login", nocache, function (req, res) { 
-    if (req.cookies['Student'] != undefined) {
-        let page = req.query.page == undefined ? 1 : Number(req.query.page);
-
-        getPrevBooksData(req.cookies['Student'], page).then(function (prevBookData) { 
-            defPrevBooksData = prevBookData;
-            getCurrentBooksData(req.cookies['Student'], page).then(function (currBookData) { 
-                defCurrBorrowedBooks = currBookData;
-                res.redirect('/dashboard');
-            }).catch(err2 => console.log(err2));
-            
-        }).catch(err => console.log(err));
-    } else if (req.cookies['Staff'] != undefined) {
-        res.redirect('/staff');
+    if (req.cookies['Student']) {
+        res.redirect('/dashboard/borrowBooks');
+    } else if (req.cookies['Staff']) {
+        res.redirect('/staff/pendingBooks');
     }else if (req.cookies['Admin'] != undefined) {
-        res.redirect('/admin');
+        res.redirect('/admin/bookData');
     }
     else {
         res.render('login', { lUserErr: '', lPassErr: '' });
@@ -627,17 +618,12 @@ app.get("/login", nocache, function (req, res) {
 // Sending the signup page on get request  
 app.get("/signUp", nocache, function (req, res) {
     if (req.cookies['Student']) {
-        getPrevBooksData(req.cookies['Student']).then(function (prevBookData) {
-            defPrevBooksData = prevBookData;
-            getCurrentBooksData(req.cookies['Student']).then(function (currBookData) {
-                defCurrBorrowedBooks = currBookData;
-                res.redirect('/dashboard');
-            }).catch(err2 => console.log(err2));
-
-        }).catch(err => console.log(err));
+        res.redirect('/dashboard/borrowBooks');
     } else if (req.cookies['Staff']) { 
-        res.redirect('staff');
-    }else {
+        res.redirect('/staff/pendingBooks');
+    } else if (req.cookies['Admin']) {
+        res.redirect('/admin/bookData');
+    } else {
         res.render('signUp', { fname: '', lname: '', email: '', pass: '', roll: '', uniqueNum: '' });
     }
     

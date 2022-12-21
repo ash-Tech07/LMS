@@ -1,3 +1,28 @@
+function addRowInSelectedTable(name, auth, year, price, genre, isbn) { 
+    let tableRef = document.getElementById("selectedTableBody");
+    let newRow = tableRef.insertRow();
+    let newName = newRow.insertCell(0);
+    let newAuth = newRow.insertCell(1);
+    let newYear = newRow.insertCell(2);
+    let newGenre = newRow.insertCell(3);
+    let newNPrice = newRow.insertCell(4);
+    let newewIsbn = newRow.insertCell(5);
+    let nameDOM = document.createTextNode(name);
+    let authDOM = document.createTextNode(auth);
+    let yearDOM = document.createTextNode(year);
+    let genreDOM = document.createTextNode(genre);
+    let priceDOM = document.createTextNode(price);
+    let isbnDOM = document.createTextNode(isbn);
+    newName.appendChild(nameDOM);
+    newAuth.appendChild(authDOM);
+    newYear.appendChild(yearDOM);
+    newGenre.appendChild(genreDOM);
+    newNPrice.appendChild(priceDOM);
+    newewIsbn.appendChild(isbnDOM);
+}
+
+
+
 window.onload = function () {
     if (screen.width <= 350) {
         document.getElementById("nav_brand").classList.remove("ms-3");
@@ -7,6 +32,29 @@ window.onload = function () {
     if (toastLiveExample && window.location.href.endsWith("success") || window.location.href.endsWith("failed")) {
         const toast = new bootstrap.Toast(toastLiveExample);
         toast.show();
+    }
+
+    if (window.location.href.includes("/borrowBooks")) { 
+        if (window.localStorage.getItem("selectedISBNs") != null) {
+            let selectedIsbnArray = window.localStorage.getItem("selectedISBNs").split("^");
+            let selectedNameArray = window.localStorage.getItem("selectedNames").split("^");
+            let selectedAuthArray = window.localStorage.getItem("selectedAuths").split("^");
+            let selectedYearArray = window.localStorage.getItem("selectedYears").split("^");
+            let selectedGenreArray = window.localStorage.getItem("selectedGenres").split("^");
+            let selectedPriceArray = window.localStorage.getItem("selectedPrices").split("^");
+
+            for (let i = 0; i < selectedIsbnArray.length; i++) { 
+                addRowInSelectedTable(selectedNameArray[i], selectedAuthArray[i], selectedYearArray[i], selectedPriceArray[i], selectedGenreArray[i], selectedIsbnArray[i]);
+            }
+        }
+    }
+    if (window.location.href.includes("/confirmBooks")) {
+        window.localStorage.removeItem("selectedISBNs");
+        window.localStorage.removeItem("selectedNames");
+        window.localStorage.removeItem("selectedAuths");
+        window.localStorage.removeItem("selectedYears");
+        window.localStorage.removeItem("selectedGenres");
+        window.localStorage.removeItem("selectedPrices");
     }
 }
 

@@ -22,7 +22,7 @@
 
         <!-- RESULTS TABLE  -->
         <div class="table-responsive-lg">
-            <table class="table table-striped table-hover mt-5 ms-auto me-auto table-bordered tables">
+            <table class="table table-striped table-hover mt-5 ms-auto me-auto table-bordered tables" id="resultTable">
                 <thead>
                     <tr>
                         <th>S. NO</th>
@@ -55,7 +55,7 @@
                                 <td><button class="btn btn-outline-primary" id="<%= searchData[data]['isbn'] %>" type="button" onclick="addBook(this.id)">Lend</button></td>
                             <% } else { %>
                                 <td class="text-center">No</td>
-                                <td><button class="btn btn-outline-secondary" type="button" disabled>Lend</button></td>
+                                <td><button class="btn btn-outline-secondary" id="<%= searchData[data]['isbn'] %>" type="button" disabled>Lend</button></td>
                             <% } %>
                         </tr>
                     <% x+=1 } } %>
@@ -116,14 +116,16 @@
                     <th>ISBN</th>
                 </tr>
             </thead>
-            <tbody id="selectedTableBody" ></tbody>
+            <tbody id="selectedTableBody" >
+
+            </tbody>
         </table>
 
 
         <!-- SUBMIT BUTTON -->
         <div class="text-center mb-5" id="lend_btn">
             <form action="/dashboard/confirmBooks" method="post" id="bookLend">
-                <input type="text" name="booksSelected" id="booksSelectedInp" style="display: none;">
+                <input type="text" name="booksSelected" id="booksSelectedInp">
                 <button class="btn dashboard-btn" type="submit">Lend Books</button>
             </form>
         </div>

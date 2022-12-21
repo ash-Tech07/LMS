@@ -10,8 +10,10 @@ const bcrypt = require("bcryptjs");
 const { body, validationResult } = require("express-validator");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 var schema = mongoose.Schema;
 const uri = "mongodb+srv://admin-ashwin:"+ process.env.dbpass +"@cluster0.kiishes.mongodb.net/libraryData";
+// const uri = "mongodb://localhost:27017/libraryData";
 const pageOffset = 10;
 
 
@@ -56,7 +58,9 @@ const userSchema = new schema({
     department: String,
     password: String,
     unique_number: String,
-    created: Date
+    created: Date,
+    email_verified: Boolean,
+    userHash: String
 });
 
 //Model definitions
@@ -90,7 +94,8 @@ var defAddBookErrors = [{ "bname": "", "author": "", "year": "", "genre": "", "p
 var defCurrBorrowedBooks = {};  
 var defPendingBooks = {};   
 var defYetBorrowedBooks = {};
-var defSearchConfig = [{ 'searchTag': 'Search By:', 'searchBarText': '*' }];
+var defSearchConfig = [{ 'searchTag': 'Search By:', 'searchBarText': '' }];
+const defSignUpUserData = { "user_type": { "Student": "", "Admin": "", "Staff": "" }, "first_name": "", "last_name": "", "email": "", "roll_no": "", "unique_number": "", "date_of_birth": "", "department": {"IT": "", "CT": "", "ECE": "", "E&I": "", "PT": "", "ME": "", "RPT": "", "MG": "", "AE": ""} };
 
 // Setting the express environment
 const app = express();
@@ -105,6 +110,23 @@ function nocache(req, res, next) {
     res.header('Pragma', 'no-cache');
     res.header('Expires', '-1');
     next();
+}
+
+function retainSignUpUserData(signUpData) { 
+    let data = {};
+    data["user_type"] = { "Student": "", "Staff": "", "Admin": "" };
+    data["user_type"][signUpData["user_type"]] = "selected";
+    data["first_name"] = signUpData.first_name;
+    data["last_name"] = signUpData.last_name;
+    data["email"] = signUpData.email;
+    data["roll_no"] = signUpData.roll_no;
+    data["unique_number"] = signUpData.unique_number;
+    data["date_of_birth"] = signUpData.date_of_birth;
+    data["department"] = { "IT": "", "CT": "", "ECE": "", "E&I": "", "PT": "", "ME": "", "RPT": "", "MG": "", "AE": "" };
+    data["department"][signUpData.department] = "selected";
+    data["unique_number"] = signUpData.unique_number;
+
+    return data;
 }
 
 //Function to get the year from datetime
@@ -169,14 +191,20 @@ function createNewUser(newUserData) {
                         return reject(false);
                     } else {
                         newUserData['library_id'] = Number(count + 2000);
-                        const newUser = new User(newUserData);
-                        newUser.save(function (err, _doc) {
-                            if (err) {
-                                return reject(false);
-                            } else {
-                                resolve(newUserData);
-                            }
+                        crypto.randomBytes(10, function (err, bytes) { 
+                            if (err) return reject(false);
+                            newUserData['userHash'] = bytes.toString("hex");
+                            newUserData['email_verified'] = false;
+                            const newUser = new User(newUserData);
+                            newUser.save(function (err, _doc) {
+                                if (err) {
+                                    return reject(false);
+                                } else {
+                                    resolve(newUserData);
+                                }
+                            });
                         });
+                        
                     }
                 });
             },
@@ -521,7 +549,7 @@ function updateTransaction(id, stat, isbnArray, keyValue, staff) {
                 if (finalCount == Object.keys(idObj).length) {
                     resolve(true);
                 } else { 
-                    return reject(false);
+                    return reject("here");
                 }
             });
 
@@ -624,7 +652,7 @@ app.get("/signUp", nocache, function (req, res) {
     } else if (req.cookies['Admin']) {
         res.redirect('/admin/bookData');
     } else {
-        res.render('signUp', { fname: '', lname: '', email: '', pass: '', roll: '', uniqueNum: '' });
+        res.render('signUp', { fname: '', lname: '', email: '', pass: '', roll: '', uniqueNum: '', signUpUserData: defSignUpUserData});
     }
     
 });
@@ -660,8 +688,9 @@ app.post("/signUp", validateSignUpConfig, function (req, res) {
     const filteredSignUpData = validationResult(req)['errors'];
     var signUpErrors = { 'fname': '', 'lname': '', 'email': '', 'pass': '', 'roll': '', 'uniqueNum': ''};
     let admin_chk = true;
+    var userData = req.body;
+
     if ((Object.keys(filteredSignUpData).length == 1 && filteredSignUpData[0]['param'] == 'roll_no') || Object.keys(filteredSignUpData).length == 0) {
-        var userData = req.body;
         const date = new Date();
         const dobTemp = new Date(userData['date_of_birth']);
         const salt = bcrypt.genSaltSync(10);
@@ -672,7 +701,6 @@ app.post("/signUp", validateSignUpConfig, function (req, res) {
         delete userData['reg_btn'];
 
         if (userData['user_type'] == "Admin") { 
-            console.log(userData['admin_password']);
             admin_chk = bcrypt.compareSync(userData['admin_password'], process.env.admin);
         }
 
@@ -692,8 +720,9 @@ app.post("/signUp", validateSignUpConfig, function (req, res) {
                 }
             }).catch(err => console.log(err));
         } else { 
+            let SignUpUserData = retainSignUpUserData(userData);
             signUpErrors['roll'] = "Enter a valid admin password";
-            res.render('signUp', { fname: signUpErrors['fname'], lname: signUpErrors['lname'], email: signUpErrors['email'], pass: signUpErrors['pass'], roll: signUpErrors['roll'], uniqueNum: signUpErrors['uniqueNum'] });
+            res.render('signUp', { fname: signUpErrors['fname'], lname: signUpErrors['lname'], email: signUpErrors['email'], pass: signUpErrors['pass'], roll: signUpErrors['roll'], uniqueNum: signUpErrors['uniqueNum'], signUpUserData: SignUpUserData });
         }
         
       
@@ -721,7 +750,8 @@ app.post("/signUp", validateSignUpConfig, function (req, res) {
                     break;
             }
         }
-        res.render('signUp', { fname: signUpErrors['fname'], lname: signUpErrors['lname'], email: signUpErrors['email'], pass: signUpErrors['pass'], roll: signUpErrors['roll'], uniqueNum: signUpErrors['uniqueNum'] });
+        let SignUpUserData = retainSignUpUserData(userData);
+        res.render('signUp', { fname: signUpErrors['fname'], lname: signUpErrors['lname'], email: signUpErrors['email'], pass: signUpErrors['pass'], roll: signUpErrors['roll'], uniqueNum: signUpErrors['uniqueNum'], signUpUserData: SignUpUserData });
     }
 });
 
